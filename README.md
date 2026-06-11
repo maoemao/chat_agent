@@ -1,6 +1,6 @@
 # 聊天机器人 Agent
 
-一个基于 FastAPI 的聊天机器人 Agent，支持 Telegram 接入、RAG 文档问答、火山 Codeing Plan 集成和 MCP 功能调用（包含 DuckDuckGo 搜索）。
+一个基于 FastAPI 的聊天机器人 Agent，支持 Telegram 接入、RAG 文档问答、火山 Codeing Plan 集成、MCP 功能调用（包含 DuckDuckGo 搜索）和 GitHub 代码推送。
 
 ---
 
@@ -32,8 +32,34 @@ chmod +x stop_all.sh
 | `/rag [问题]` | 基于文档进行问答 | `/rag 如何配置 MCP？` |
 | `/plan [需求]` | 生成代码规划 | `/plan 创建一个登录页面` |
 | `/code [需求]` | 分析并修改本地代码 | `/code 添加用户登录功能` |
+| `/git [操作]` | Git 操作（查看状态、提交、推送） | `/git status` |
 | `/mcp` | 显示可用 MCP 工具 | `/mcp` |
 | `/mcp search [关键词]` | DuckDuckGo 网络搜索 | `/mcp search AI最新动态` |
+
+### Git 操作详细用法
+
+| 命令 | 描述 | 示例 |
+|------|------|------|
+| `/git` | 显示帮助信息 | `/git` |
+| `/git status` | 查看工作区状态 | `/git status` |
+| `/git diff` | 查看未暂存的更改 | `/git diff` |
+| `/git log [数量]` | 查看最近的提交记录 | `/git log 5` |
+| `/git branch` | 查看当前分支信息 | `/git branch` |
+| `/git add` | 暂存所有更改 | `/git add` |
+| `/git commit [信息]` | 提交更改 | `/git commit 修复了登录bug` |
+| `/git push` | 推送到远程仓库 | `/git push` |
+| `/git commitpush [信息]` | 一键提交并推送 | `/git commitpush 添加了新功能` |
+
+### 一键推送代码示例
+
+```bash
+# 提交并推送到 GitHub（最常用）
+/git commitpush 修复了搜索功能
+
+# 先查看状态，再提交推送
+/git status
+/git commitpush 添加了新功能
+```
 
 ---
 
@@ -44,8 +70,40 @@ chmod +x stop_all.sh
 | **通用聊天接入层** | 基于适配器模式设计，当前支持 Telegram，预留 Slack 等平台扩展 |
 | **RAG 文档问答** | 基于 LangChain + FAISS 实现 Markdown 文档检索增强生成 |
 | **火山 Codeing Plan** | 接入火山引擎代码规划 API，自动生成代码实现方案 |
+| **代码修改助手** | 自动分析项目代码，生成修改方案，支持一键应用修改 |
 | **MCP 功能调用** | 支持自定义配置 MCP 服务，内置 DuckDuckGo 搜索和文件系统操作 |
+| **GitHub 代码推送** | 通过 Telegram 随时随地提交和推送代码到 GitHub |
 | **一键启停脚本** | `start_all.sh` 和 `stop_all.sh` 方便管理服务 |
+
+---
+
+## 📤 GitHub 代码推送
+
+### 配置 GitHub Token
+
+1. 访问 https://github.com/settings/tokens
+2. 生成新的 Personal Access Token
+3. 勾选 `repo` 权限
+4. 在 `.env` 文件中添加：
+
+```env
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+```
+
+### 使用流程
+
+```
+1. 修改代码文件
+2. 使用 /git status 查看修改状态
+3. 使用 /git commitpush [提交信息] 一键提交并推送
+```
+
+### 特点
+
+- ✅ HTTPS 协议自动切换
+- ✅ 详细的错误提示
+- ✅ 支持查看状态、差异、日志
+- ✅ 自动处理远程仓库配置
 
 ---
 
@@ -112,6 +170,9 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 VOLC_API_KEY=your_volc_api_key
 # VOLC_ACCESS_KEY=your_volc_access_key
 # VOLC_SECRET_KEY=your_volc_secret_key
+
+# GitHub配置（用于代码推送）
+GITHUB_TOKEN=your_github_token
 
 # RAG配置
 RAG_DOCS_PATH=data/documents
@@ -343,6 +404,8 @@ maoge_agent/
 │   ├── services/           # 业务服务层
 │   │   ├── rag_service.py  # RAG问答服务
 │   │   ├── codeing_plan_service.py # 火山Codeing Plan
+│   │   ├── code_editor_service.py # 代码修改助手
+│   │   ├── git_service.py # Git操作服务
 │   │   └── mcp_service.py  # MCP功能调用服务（含DuckDuckGo搜索）
 │   ├── config/             # 配置文件
 │   │   ├── settings.py     # 环境配置
@@ -350,7 +413,7 @@ maoge_agent/
 │   ├── routers/            # API路由
 │   │   └── webhook.py      # Webhook入口
 │   ├── utils/              # 工具模块
-│   │   └── markdown_parser.py # Markdown解析工具
+│   │   └── logger.py       # 日志工具
 │   └── main.py             # 主入口
 ├── config/
 │   └── mcp_config.json     # MCP服务配置
@@ -409,6 +472,7 @@ curl -X POST http://localhost:8000/webhook/telegram \
 2. 使用 HTTPS 部署生产环境
 3. 配置适当的访问控制
 4. 定期更新依赖版本
+5. GitHub Token 具有代码仓库访问权限，请妥善保管
 
 ---
 
