@@ -1,0 +1,58 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+.env/
+.venv/
+
+# Database
+*.db
+*.sqlite
+
+# LangChain cache
+.cache/
+langchain/
+
+# FAISS index
+*.index
+faiss/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.temp
+
+# MCP config
+config/mcp_config.json
+
+# Data directory (except documents)
+data/*
+!data/documents/
+!data/documents/*.md
