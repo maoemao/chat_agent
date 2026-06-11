@@ -128,12 +128,69 @@ class AgentCore:
     
     async def _handle_mcp(self, command: Command, message: Message) -> str:
         agent_logger.debug(f"Handling /mcp command from {message.sender}")
-        tools = self.mcp_manager.get_enabled_tools()
-        if not tools:
-            agent_logger.debug("No MCP tools available")
-            return "暂无可用的MCP工具"
-        tool_list = "\n".join([f"- {tool.name}: {tool.description or '无描述'}" for tool in tools])
-        return f"可用MCP工具：\n{tool_list}"
+        if not command.args:
+            agent_logger.debug("No args provided, showing tool list")
+            tools = self.mcp_manager.get_enabled_tools()
+            if not tools:
+                agent_logger.debug("No MCP tools available")
+                return """🔧 MCP工具
+
+用法：
+/mcp - 显示可用工具
+/mcp <工具名> <参数> - 调用指定工具
+
+示例：
+/mcp search AI最新动态
+
+可用工具：
+暂无可用的MCP工具"""
+            tool_list = "\n".join([f"- {tool.name}: {tool.description or '无描述'}" for tool in tools])
+            return f"""🔧 MCP工具
+
+用法：
+/mcp - 显示可用工具
+/mcp <工具名> <参数> - 调用指定工具
+
+示例：
+/mcp search AI最新动态
+
+可用工具：
+{tool_list}"""
+        
+        tool_name = command.args[0]
+        tool_args = command.args[1:]
+        
+        if tool_name == "search":
+            if not tool_args:
+                return "请提供搜索关键词，例如：/mcp search AI最新动态"
+            query = " ".join(tool_args)
+            agent_logger.debug(f"Calling MCP search tool with query: {query}")
+            try:
+                result = await self.mcp_manager.call_mcp_tool("ddg-search", "search", query=query)
+                if result:
+                    return self._format_search_result(result)
+                return "搜索失败，请稍后重试"
+            except Exception as e:
+                agent_logger.error(f"Error calling MCP tool: {str(e)}")
+                return f"调用MCP工具时发生错误: {str(e)}"
+        
+        return f"未知工具: {tool_name}"
+    
+    def _format_search_result(self, result: Dict[str, Any]) -> str:
+        if not result:
+            return "未找到搜索结果"
+        if isinstance(result, dict) and 'results' in result:
+            results = result['results']
+            if not results:
+                return "未找到搜索结果"
+            formatted = "🔍 搜索结果:\n\n"
+            for i, item in enumerate(results[:5], 1):
+                title = item.get('title', '')
+                url = item.get('url', '')
+                snippet = item.get('snippet', '')
+                formatted += f"{i}. [{title}]({url})\n{snippet}\n\n"
+            return formatted
+        return str(result)
     
     def _parse_command(self, content: str) -> Command:
         parts = content.split()

@@ -1,7 +1,41 @@
-
 # 聊天机器人 Agent
 
-一个基于 FastAPI 的聊天机器人 Agent，支持 Telegram 接入、RAG 文档问答、火山 Codeing Plan 集成和 MCP 功能调用。
+一个基于 FastAPI 的聊天机器人 Agent，支持 Telegram 接入、RAG 文档问答、火山 Codeing Plan 集成和 MCP 功能调用（包含 DuckDuckGo 搜索）。
+
+---
+
+## 🚀 快速开始
+
+### 一键启动
+
+```bash
+# 进入项目目录
+cd maoge_agent
+
+# 启动所有服务
+chmod +x start_all.sh
+./start_all.sh
+
+# 停止所有服务
+chmod +x stop_all.sh
+./stop_all.sh
+```
+
+---
+
+## 🤖 Telegram 命令用法
+
+| 命令 | 描述 | 示例 |
+|------|------|------|
+| `/start` | 欢迎消息 | `/start` |
+| `/help` | 帮助信息 | `/help` |
+| `/rag [问题]` | 基于文档进行问答 | `/rag 如何配置 MCP？` |
+| `/plan [需求]` | 生成代码规划 | `/plan 创建一个登录页面` |
+| `/code [需求]` | 分析并修改本地代码 | `/code 添加用户登录功能` |
+| `/mcp` | 显示可用 MCP 工具 | `/mcp` |
+| `/mcp search [关键词]` | DuckDuckGo 网络搜索 | `/mcp search AI最新动态` |
+
+---
 
 ## ✨ 功能特性
 
@@ -10,7 +44,10 @@
 | **通用聊天接入层** | 基于适配器模式设计，当前支持 Telegram，预留 Slack 等平台扩展 |
 | **RAG 文档问答** | 基于 LangChain + FAISS 实现 Markdown 文档检索增强生成 |
 | **火山 Codeing Plan** | 接入火山引擎代码规划 API，自动生成代码实现方案 |
-| **MCP 功能调用** | 支持自定义配置 MCP 服务，可启用/禁用特定工具 |
+| **MCP 功能调用** | 支持自定义配置 MCP 服务，内置 DuckDuckGo 网络搜索 |
+| **一键启停脚本** | `start_all.sh` 和 `stop_all.sh` 方便管理服务 |
+
+---
 
 ## 🛠️ 技术栈
 
@@ -19,10 +56,12 @@
 - **数据库**: SQLite
 - **消息队列**: Redis (可选)
 - **Telegram SDK**: python-telegram-bot 20.7
-- **RAG**: LangChain + FAISS + sentence-transformers
+- **RAG**: LangChain 1.3.7 + FAISS + sentence-transformers
 - **HTTP Client**: aiohttp
 
-## 🚀 快速开始
+---
+
+## 📦 安装指南
 
 ### 环境要求
 
@@ -55,9 +94,6 @@ venv\Scripts\activate
 ```bash
 # 在虚拟环境中安装依赖
 pip install -r requirements.txt
-
-# 安装额外依赖（如果需要）
-pip install pydantic-settings
 ```
 
 ### 配置环境变量
@@ -90,7 +126,7 @@ MCP_CONFIG_PATH=config/mcp_config.json
 ENABLED_ADAPTERS=telegram
 ```
 
-### 启动服务
+### 手动启动服务
 
 ```bash
 # 确保已激活虚拟环境
@@ -104,6 +140,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```bash
 deactivate
 ```
+
+---
 
 ## 📡 Telegram 配置
 
@@ -122,6 +160,8 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
      -d '{"url": "https://your-domain.com/webhook/telegram"}'
 ```
 
+---
+
 ## 📚 RAG 文档问答
 
 ### 添加文档
@@ -130,16 +170,21 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 
 ### 使用方法
 
-在 Telegram 中发送：
 ```
 /rag 你的问题
 ```
+
+示例：
+```
+/rag 如何配置 MCP 服务？
+```
+
+---
 
 ## 🔧 火山 Codeing Plan
 
 ### 使用方法
 
-在 Telegram 中发送：
 ```
 /plan 你的需求描述
 ```
@@ -149,37 +194,80 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 /plan 创建一个登录页面，包含用户名和密码输入框
 ```
 
+---
+
+## 📝 代码修改助手
+
+### 使用方法
+
+```
+/code 你的需求描述
+```
+
+示例：
+```
+/code 添加用户登录功能
+/code 修改数据库连接配置
+/code 为RAG服务添加缓存机制
+```
+
+### 工作流程
+
+1. **分析项目结构** - 自动扫描项目中的 Python 文件（排除虚拟环境）
+2. **读取文件内容** - 获取关键文件内容（最多10个文件）
+3. **调用火山引擎 API** - 使用 ark-code-latest 模型分析需求
+4. **生成修改方案** - 返回修改建议和完整代码块
+5. **安全备份** - 自动创建 `.backup` 备份文件
+
+### 功能特点
+
+- ✅ 自动扫描项目文件结构
+- ✅ 智能分析代码并生成修改方案
+- ✅ 修改前自动备份原文件
+- ✅ 支持代码块提取和展示
+
+---
+
 ## 🧩 MCP 功能调用
+
+### DuckDuckGo 搜索
+
+```
+/mcp search 搜索关键词
+```
+
+示例：
+```
+/mcp search AI最新动态
+/mcp search Python教程
+```
 
 ### 配置 MCP 服务
 
-创建 `config/mcp_config.json` 文件：
+`config/mcp_config.json` 文件支持 LangChain 标准格式：
 
 ```json
 {
-  "servers": [
-    {
-      "name": "mcp_server_name",
-      "url": "http://mcp-server:port",
-      "enabled": true,
-      "tools": [
-        {
-          "name": "tool_name",
-          "enabled": true,
-          "description": "工具描述"
-        }
-      ]
+  "mcpServers": {
+    "ddg-search": {
+      "command": "duckduckgo-mcp-server",
+      "args": ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8787"],
+      "env": {
+        "DDG_SAFE_SEARCH": "STRICT",
+        "DDG_REGION": "cn-zh"
+      }
     }
-  ]
+  }
 }
 ```
 
 ### 查看可用工具
 
-在 Telegram 中发送：
 ```
 /mcp
 ```
+
+---
 
 ## 📖 API 接口
 
@@ -202,6 +290,8 @@ POST /webhook/{platform}
 
 支持的 platform: `telegram`
 
+---
+
 ## 📁 项目结构
 
 ```
@@ -218,7 +308,7 @@ maoge_agent/
 │   ├── services/           # 业务服务层
 │   │   ├── rag_service.py  # RAG问答服务
 │   │   ├── codeing_plan_service.py # 火山Codeing Plan
-│   │   └── mcp_service.py  # MCP功能调用服务
+│   │   └── mcp_service.py  # MCP功能调用服务（含DuckDuckGo搜索）
 │   ├── config/             # 配置文件
 │   │   ├── settings.py     # 环境配置
 │   │   └── mcp_config.py   # MCP配置
@@ -227,23 +317,20 @@ maoge_agent/
 │   ├── utils/              # 工具模块
 │   │   └── markdown_parser.py # Markdown解析工具
 │   └── main.py             # 主入口
+├── config/
+│   └── mcp_config.json     # MCP服务配置
 ├── data/
 │   └── documents/          # Markdown文档存储
 ├── tests/                  # 测试目录
 ├── requirements.txt        # 依赖列表
 ├── .env.example            # 环境变量模板
-└── .env                    # 环境变量（需创建）
+├── .env                    # 环境变量（需创建）
+├── start_all.sh            # 一键启动脚本
+├── stop_all.sh             # 一键停止脚本
+└── README.md               # 项目文档
 ```
 
-## 🤖 Telegram 命令
-
-| 命令 | 描述 |
-|------|------|
-| `/start` | 欢迎消息 |
-| `/help` | 帮助信息 |
-| `/rag [问题]` | 基于文档进行问答 |
-| `/plan [需求]` | 生成代码规划 |
-| `/mcp` | 显示可用 MCP 工具 |
+---
 
 ## 🔌 添加新聊天平台
 
@@ -255,6 +342,8 @@ maoge_agent/
    - `get_platform()` - 返回平台类型
    - `get_name()` - 返回平台名称
 3. 在 `settings.py` 中启用适配器
+
+---
 
 ## 🧪 测试
 
@@ -268,12 +357,16 @@ curl -X POST http://localhost:8000/webhook/telegram \
      -d '{"update_id":12345,"message":{"message_id":1,"from":{"id":12345,"first_name":"Test"},"chat":{"id":12345},"date":1234567890,"text":"/start"}}'
 ```
 
+---
+
 ## 📝 日志
 
 服务启动后会输出日志到控制台，包含：
 - 服务启动信息
 - 接收到的消息
 - 错误信息
+
+---
 
 ## 🔒 安全注意事项
 
@@ -282,10 +375,12 @@ curl -X POST http://localhost:8000/webhook/telegram \
 3. 配置适当的访问控制
 4. 定期更新依赖版本
 
+---
+
 ## 📄 License
 
 MIT License
 
 ---
 
-**注意**: 首次启动时，系统会自动创建 `data/documents/welcome.md` 欢迎文档。RAG 功能需要 OpenAI API Key 才能正常工作。
+**注意**: 首次启动时，系统会自动创建 `data/documents/welcome.md` 欢迎文档。
