@@ -9,6 +9,7 @@ echo ""
 echo "🔄 检查并停止旧进程..."
 pkill -f "uvicorn" 2>/dev/null || true
 pkill -f "duckduckgo-mcp-server" 2>/dev/null || true
+pkill -f "mcp-server-filesystem" 2>/dev/null || true
 sleep 1
 
 # 检查端口
@@ -20,7 +21,7 @@ for port in 8000 8787; do
     fi
 done
 
-# 启动 DuckDuckGo MCP Server（可选）
+# 启动 DuckDuckGo MCP Server
 echo "🚀 启动 DuckDuckGo MCP Server..."
 cd "$(dirname "$0")"
 export DDG_SAFE_SEARCH=STRICT
@@ -32,6 +33,17 @@ if pgrep -f "duckduckgo-mcp-server" > /dev/null; then
     echo "✅ DuckDuckGo MCP Server 已启动 (端口: 8787)"
 else
     echo "❌ DuckDuckGo MCP Server 启动失败"
+fi
+
+# 启动 Filesystem MCP Server
+echo "🚀 启动 Filesystem MCP Server..."
+nohup mcp-server-filesystem /Users/maogee/Documents/trae_projects/maoge_agent > filesystem_mcp.log 2>&1 &
+sleep 2
+
+if pgrep -f "mcp-server-filesystem" > /dev/null; then
+    echo "✅ Filesystem MCP Server 已启动"
+else
+    echo "❌ Filesystem MCP Server 启动失败"
 fi
 
 echo ""

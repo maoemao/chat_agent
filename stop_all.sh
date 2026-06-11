@@ -21,6 +21,14 @@ else
     echo "   ℹ️  DuckDuckGo MCP Server 未运行"
 fi
 
+# 停止 Filesystem MCP Server
+echo "⏹️  停止 Filesystem MCP Server..."
+if pkill -f "mcp-server-filesystem" 2>/dev/null; then
+    echo "   ✅ Filesystem MCP Server 已停止"
+else
+    echo "   ℹ️  Filesystem MCP Server 未运行"
+fi
+
 # 停止 ngrok（可选）
 echo "⏹️  停止 ngrok..."
 if pkill -x "ngrok" 2>/dev/null; then

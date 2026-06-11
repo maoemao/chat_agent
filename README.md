@@ -44,7 +44,7 @@ chmod +x stop_all.sh
 | **通用聊天接入层** | 基于适配器模式设计，当前支持 Telegram，预留 Slack 等平台扩展 |
 | **RAG 文档问答** | 基于 LangChain + FAISS 实现 Markdown 文档检索增强生成 |
 | **火山 Codeing Plan** | 接入火山引擎代码规划 API，自动生成代码实现方案 |
-| **MCP 功能调用** | 支持自定义配置 MCP 服务，内置 DuckDuckGo 网络搜索 |
+| **MCP 功能调用** | 支持自定义配置 MCP 服务，内置 DuckDuckGo 搜索和文件系统操作 |
 | **一键启停脚本** | `start_all.sh` 和 `stop_all.sh` 方便管理服务 |
 
 ---
@@ -242,6 +242,17 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 /mcp search Python教程
 ```
 
+### 文件系统操作
+
+MCP 文件系统服务器提供项目文件浏览功能：
+
+- ✅ 列出目录文件
+- ✅ 读取文件内容
+- ✅ 搜索文件
+- ✅ 获取文件统计信息
+
+> **注意**: 文件系统 MCP 使用 stdio 模式，与 HTTP 模式的服务不同。
+
 ### 配置 MCP 服务
 
 `config/mcp_config.json` 文件支持 LangChain 标准格式：
@@ -256,6 +267,11 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
         "DDG_SAFE_SEARCH": "STRICT",
         "DDG_REGION": "cn-zh"
       }
+    },
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "args": ["/项目路径"],
+      "env": {}
     }
   }
 }
