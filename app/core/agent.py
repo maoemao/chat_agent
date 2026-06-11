@@ -5,6 +5,7 @@ from app.services.codeing_plan_service import CodeingPlanService
 from app.services.code_editor_service import CodeEditorService
 from app.services.ai_chat_service import AIChatService
 from app.services.mcp_service import MCPManager
+from app.services.git_service import GitService
 from app.core.message_router import MessageRouter
 from app.utils.logger import agent_logger
 
@@ -16,6 +17,7 @@ class AgentCore:
         self.code_editor_service = CodeEditorService()
         self.ai_chat_service = AIChatService()
         self.mcp_manager = MCPManager()
+        self.git_service = GitService()
         self.message_router = MessageRouter()
         self._register_handlers()
         agent_logger.info("AgentCore initialized successfully")
@@ -37,6 +39,7 @@ class AgentCore:
             'plan': self._handle_plan,
             'code': self._handle_code,
             'mcp': self._handle_mcp,
+            'git': self._handle_git,
         }
         
         handler = command_handlers.get(command.name)
@@ -73,6 +76,7 @@ class AgentCore:
 /rag [问题] - RAG问答（基于文档）
 /plan [需求] - 生成代码规划
 /code [需求] - 分析并修改代码
+/git [操作] - Git操作（status/diff/push等）
 /mcp - 显示可用MCP工具"""
     
     async def _handle_help(self, command: Command, message: Message) -> str:
@@ -83,6 +87,7 @@ class AgentCore:
 /rag [问题] - 基于文档进行问答
 /plan [需求] - 生成代码规划
 /code [需求] - 分析并修改项目代码
+/git [操作] - Git操作（status/diff/push等）
 /mcp - 显示可用MCP工具"""
     
     async def _handle_rag(self, command: Command, message: Message) -> str:
@@ -175,6 +180,81 @@ class AgentCore:
                 return f"调用MCP工具时发生错误: {str(e)}"
         
         return f"未知工具: {tool_name}"
+
+    async def _handle_git(self, command: Command, message: Message) -> str:
+        """处理 Git 命令"""
+        agent_logger.debug(f"Handling /git command from {message.sender}, args: {command.args}")
+
+        # 无参数时显示帮助
+        if not command.args:
+            return """📦 Git 操作助手
+
+用法：
+/git status - 查看工作区状态
+/git diff - 查看未暂存的更改
+/git log - 查看最近的提交记录
+/git branch - 查看当前分支信息
+/git add - 暂存所有更改
+/git commit [message] - 提交更改
+/git push - 推送到远程仓库
+/git commitpush [message] - 提交并推送
+
+示例：
+/git status
+/git commit 修复了登录bug
+/git commitpush 添加了新功能"""
+
+        subcommand = command.args[0].lower()
+        subargs = command.args[1:]
+
+        try:
+            if subcommand == "status":
+                return self.git_service.get_status()
+
+            elif subcommand == "diff":
+                return self.git_service.get_diff()
+
+            elif subcommand == "log":
+                limit = int(subargs[0]) if subargs and subargs[0].isdigit() else 5
+                return self.git_service.get_log(limit)
+
+            elif subcommand == "branch":
+                return self.git_service.get_branch()
+
+            elif subcommand == "add":
+                return self.git_service.stage_all()
+
+            elif subcommand == "commit":
+                if not subargs:
+                    return "❌ 请提供提交信息\n\n示例：/git commit 修复了登录bug"
+                commit_message = " ".join(subargs)
+                return self.git_service.commit(commit_message)
+
+            elif subcommand == "push":
+                return self.git_service.push()
+
+            elif subcommand == "commitpush":
+                """一键提交并推送"""
+                if not subargs:
+                    return "❌ 请提供提交信息\n\n示例：/git commitpush 修复了登录bug"
+
+                commit_message = " ".join(subargs)
+
+                # 先提交
+                commit_result = self.git_service.commit(commit_message)
+                if not commit_result.startswith("✅"):
+                    return commit_result
+
+                # 如果提交成功，再推送
+                push_result = self.git_service.push()
+                return f"{commit_result}\n\n{push_result}"
+
+            else:
+                return f"❌ 未知Git命令：{subcommand}\n\n使用 /git 查看帮助信息"
+
+        except Exception as e:
+            agent_logger.error(f"Error handling git command: {str(e)}", exc_info=True)
+            return f"❌ Git操作失败：{str(e)}"
     
     def _format_search_result(self, result: Dict[str, Any]) -> str:
         if not result:

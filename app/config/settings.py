@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     VOLC_API_KEY: str = ""
     VOLC_ACCESS_KEY: str = ""
     VOLC_SECRET_KEY: str = ""
+    GITHUB_TOKEN: str = ""
     RAG_DOCS_PATH: str = "data/documents"
     DATABASE_URL: str = "sqlite:///./app.db"
     MCP_CONFIG_PATH: str = "config/mcp_config.json"

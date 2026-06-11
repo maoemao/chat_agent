@@ -39,3 +39,4 @@ rag_logger = setup_logger("rag", os.path.join(LOG_DIR, f"rag_{current_time}.log"
 plan_logger = setup_logger("plan", os.path.join(LOG_DIR, f"plan_{current_time}.log"))
 mcp_logger = setup_logger("mcp", os.path.join(LOG_DIR, f"mcp_{current_time}.log"))
 router_logger = setup_logger("router", os.path.join(LOG_DIR, f"router_{current_time}.log"))
+git_logger = setup_logger("git", os.path.join(LOG_DIR, f"git_{current_time}.log"))
