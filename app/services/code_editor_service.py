@@ -107,7 +107,7 @@ class CodeEditorService:
 3. 完整的修改后代码"""
 
             # 4. 调用API生成修改方案
-            import requests
+            import httpx
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json"
@@ -122,12 +122,12 @@ class CodeEditorService:
                 "temperature": 0.3
             }
 
-            response = requests.post(
-                f"{self.base_url}/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=60
-            )
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=data
+                )
 
             if response.status_code == 200:
                 result = response.json()

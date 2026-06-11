@@ -1,7 +1,7 @@
 import os
 import re
 import json
-import requests
+import httpx
 from pathlib import Path
 from typing import List, Optional, Dict
 from app.config.settings import settings
@@ -19,7 +19,7 @@ class RAGService:
         self._load_documents()
         rag_logger.info("RAGService initialized")
     
-    def _get_embedding(self, text: str) -> List[float]:
+    async def _get_embedding(self, text: str) -> List[float]:
         """使用火山引擎Embedding API获取文本向量"""
         try:
             headers = {
@@ -31,12 +31,12 @@ class RAGService:
                 "input": text
             }
             
-            response = requests.post(
-                f"{self.base_url}/embeddings",
-                headers=headers,
-                json=data,
-                timeout=30
-            )
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/embeddings",
+                    headers=headers,
+                    json=data
+                )
             
             if response.status_code == 200:
                 result = response.json()
@@ -90,8 +90,19 @@ class RAGService:
                 except Exception as e:
                     rag_logger.error(f"Failed to read {file_path}: {str(e)}")
             
-            # 预计算文档embedding
-            self._precompute_embeddings()
+            # 预计算文档embedding (使用同步方式，避免在__init__中使用asyncio.run)
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # 如果已经在事件循环中，创建新任务
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as pool:
+                        future = pool.submit(asyncio.run, self._precompute_embeddings())
+                else:
+                    asyncio.run(self._precompute_embeddings())
+            except Exception as e:
+                rag_logger.error(f"Failed to precompute embeddings: {str(e)}")
             
             rag_logger.info(f"Successfully loaded {len(self.documents)} document(s)")
             
@@ -113,7 +124,7 @@ class RAGService:
 
         return result
     
-    def _precompute_embeddings(self):
+    async def _precompute_embeddings(self):
         """预计算所有文档的embedding"""
         if not self.api_key:
             rag_logger.warning("No API key available, skipping embedding precomputation")
@@ -130,7 +141,7 @@ class RAGService:
                 if len(chunk.strip()) < 10:
                     continue
                 
-                embedding = self._get_embedding(chunk.strip())
+                embedding = await self._get_embedding(chunk.strip())
                 if embedding:
                     doc_embeddings.append({
                         'text': chunk.strip(),
@@ -142,12 +153,12 @@ class RAGService:
         
         rag_logger.info("Document embeddings precomputation completed")
     
-    def _find_relevant_chunks(self, query: str, top_k: int = 5) -> List[str]:
+    async def _find_relevant_chunks(self, query: str, top_k: int = 5) -> List[str]:
         if not self.documents:
             return []
         
         # 获取查询的embedding
-        query_embedding = self._get_embedding(query)
+        query_embedding = await self._get_embedding(query)
         
         if query_embedding:
             # 使用向量相似度搜索
@@ -200,7 +211,7 @@ class RAGService:
         scored_chunks.sort(key=lambda x: x[0], reverse=True)
         return [chunk for score, chunk in scored_chunks[:top_k]]
     
-    def _generate_answer(self, question: str, context_chunks: List[str]) -> str:
+    async def _generate_answer(self, question: str, context_chunks: List[str]) -> str:
         """使用火山引擎Chat API基于检索内容生成回答"""
         if not self.api_key:
             # 没有API Key，直接返回拼接的上下文
@@ -240,12 +251,13 @@ class RAGService:
             }
             
             rag_logger.debug(f"Sending RAG generation request to {self.base_url}/chat/completions")
-            response = requests.post(
-                f"{self.base_url}/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=60
-            )
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=data
+                )
             
             if response.status_code == 200:
                 result = response.json()
@@ -277,7 +289,7 @@ class RAGService:
         
         try:
             # 1. 检索相关文档片段
-            relevant_chunks = self._find_relevant_chunks(question)
+            relevant_chunks = await self._find_relevant_chunks(question)
             
             if not relevant_chunks:
                 rag_logger.info("No relevant chunks found")
@@ -286,7 +298,7 @@ class RAGService:
             rag_logger.info(f"Found {len(relevant_chunks)} relevant chunks")
             
             # 2. 使用LLM生成回答
-            answer = self._generate_answer(question, relevant_chunks)
+            answer = await self._generate_answer(question, relevant_chunks)
             
             return answer
             
@@ -294,7 +306,7 @@ class RAGService:
             rag_logger.error(f"RAG query failed: {str(e)}", exc_info=True)
             return f"查询失败: {str(e)}"
     
-    def add_document(self, file_path: str) -> bool:
+    async def add_document(self, file_path: str) -> bool:
         rag_logger.info(f"Adding document: {file_path}")
         
         try:
@@ -319,7 +331,7 @@ class RAGService:
                     if len(paragraph.strip()) < 10:
                         continue
                     
-                    embedding = self._get_embedding(paragraph.strip())
+                    embedding = await self._get_embedding(paragraph.strip())
                     if embedding:
                         doc_embeddings.append({
                             'text': paragraph.strip(),

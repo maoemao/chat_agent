@@ -1,6 +1,6 @@
 import json
 import time
-import requests
+import httpx
 from typing import Optional, Dict, Any
 from app.config.settings import settings
 from app.utils.logger import plan_logger
@@ -70,12 +70,13 @@ class CodeingPlanService:
                 }
 
             plan_logger.debug(f"Sending request to {self.base_url}/chat/completions")
-            response = requests.post(
-                f"{self.base_url}/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=60
-            )
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=data
+                )
 
             plan_logger.debug(f"Response status: {response.status_code}")
 
@@ -100,7 +101,7 @@ class CodeingPlanService:
                         error_msg += f" - {response.text[:100]}"
                 plan_logger.error(f"HTTP request failed: {error_msg}")
                 return error_msg
-        except requests.exceptions.RequestException as e:
+        except httpx.RequestError as e:
             error_msg = f"网络错误: {str(e)}"
             plan_logger.error(f"Network error during plan generation: {str(e)}", exc_info=True)
             return error_msg
@@ -145,12 +146,13 @@ class CodeingPlanService:
                 }
 
             plan_logger.debug(f"Sending request to {self.base_url}/chat/completions")
-            response = requests.post(
-                f"{self.base_url}/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=60
-            )
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=data
+                )
 
             plan_logger.debug(f"Response status: {response.status_code}")
 
@@ -168,6 +170,6 @@ class CodeingPlanService:
                 error_msg = f"请求失败: {response.status_code}"
                 plan_logger.error(f"HTTP request failed: {response.status_code}")
                 return error_msg
-        except requests.exceptions.RequestException as e:
+        except httpx.RequestError as e:
             plan_logger.error(f"Network error during plan execution: {str(e)}", exc_info=True)
             return f"网络错误: {str(e)}"

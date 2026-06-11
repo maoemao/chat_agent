@@ -264,9 +264,9 @@ MCP 文件系统服务器提供项目文件浏览功能：
       "command": "duckduckgo-mcp-server",
       "args": ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8787"],
       "env": {
-        "DDG_SAFE_SEARCH": "STRICT",
         "DDG_REGION": "cn-zh"
-      }
+      },
+      "mode": "http"
     },
     "filesystem": {
       "command": "mcp-server-filesystem",
@@ -276,6 +276,25 @@ MCP 文件系统服务器提供项目文件浏览功能：
   }
 }
 ```
+
+### 搜索模式切换
+
+DuckDuckGo 搜索支持两种模式：
+
+| 模式 | 说明 |
+|------|------|
+| `http` | **推荐** - 直接通过 HTTP 请求调用 DuckDuckGo 搜索，无需启动额外服务器 |
+| `mcp` | 通过官方 MCP 服务器调用，需要先启动 `duckduckgo-mcp-server` |
+
+**切换方法**: 修改 `config/mcp_config.json` 中的 `mode` 字段：
+
+```json
+"mode": "http"   // HTTP模式（默认）
+// 或
+"mode": "mcp"    // MCP模式
+```
+
+启动脚本会自动根据配置决定是否启动 MCP 服务器。
 
 ### 查看可用工具
 
