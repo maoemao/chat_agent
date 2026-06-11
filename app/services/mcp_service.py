@@ -161,12 +161,50 @@ class MCPManager:
         return self.servers.get(name)
     
     async def call_mcp_tool(self, server_name: str, tool_name: str, **kwargs) -> Optional[str]:
-        if tool_name == "search" and self.searcher:
-            query = kwargs.get('query', '')
-            max_results = kwargs.get('max_results', 10)
-            region = kwargs.get('region', '')
-            return await self.searcher.search(query, max_results, region)
+        server = self.servers.get(server_name)
+        if not server:
+            return None
+        
+        if tool_name == "search":
+            mode = server.mode.lower()
+            
+            if mode == "http":
+                return await self._call_search_http(**kwargs)
+            elif mode == "mcp":
+                return await self._call_search_mcp(server, **kwargs)
+            else:
+                return f"未知模式: {mode}，请使用 'http' 或 'mcp'"
+        
         return None
+    
+    async def _call_search_http(self, **kwargs) -> str:
+        """使用 HTTP 模式调用搜索"""
+        if not self.searcher:
+            return "搜索器未初始化"
+        query = kwargs.get('query', '')
+        max_results = kwargs.get('max_results', 10)
+        region = kwargs.get('region', '')
+        return await self.searcher.search(query, max_results, region)
+    
+    async def _call_search_mcp(self, server: MCPServer, **kwargs) -> str:
+        """使用官方 MCP 模式调用搜索"""
+        try:
+            if not server.process:
+                return "MCP 服务器未启动，请先启动服务"
+            
+            query = kwargs.get('query', '')
+            if not query:
+                return "请提供搜索关键词"
+            
+            from mcp.client.streamable_http import streamable_http_client
+            from mcp.client.session import ClientSession
+            
+            async with streamable_http_client(f"http://localhost:8787/mcp") as (read_stream, write_stream, get_session_id):
+                async with ClientSession(read_stream, write_stream) as session:
+                    result = await session.call_tool('search', arguments={'query': query})
+                    return str(result)
+        except Exception as e:
+            return f"MCP 调用失败: {str(e)}"
     
     async def list_server_tools(self, server_name: str) -> Optional[List[Dict[str, Any]]]:
         return [

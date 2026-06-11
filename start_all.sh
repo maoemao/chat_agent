@@ -21,18 +21,24 @@ for port in 8000 8787; do
     fi
 done
 
-# 启动 DuckDuckGo MCP Server
-echo "🚀 启动 DuckDuckGo MCP Server..."
-cd "$(dirname "$0")"
-export DDG_SAFE_SEARCH=STRICT
-export DDG_REGION=cn-zh
-nohup venv/bin/duckduckgo-mcp-server --transport streamable-http --host 0.0.0.0 --port 8787 > mcp.log 2>&1 &
-sleep 2
+# 读取 MCP 配置，决定是否启动 DuckDuckGo MCP Server
+DDG_MODE=$(python3 -c "import json; print(json.load(open('config/mcp_config.json'))['mcpServers']['ddg-search'].get('mode', 'http'))" 2>/dev/null || echo "http")
+echo "📋 DuckDuckGo 搜索模式: $DDG_MODE"
 
-if pgrep -f "duckduckgo-mcp-server" > /dev/null; then
-    echo "✅ DuckDuckGo MCP Server 已启动 (端口: 8787)"
+if [ "$DDG_MODE" = "mcp" ]; then
+    echo "🚀 启动 DuckDuckGo MCP Server..."
+    cd "$(dirname "$0")"
+    export DDG_REGION=cn-zh
+    nohup venv/bin/duckduckgo-mcp-server --transport streamable-http --host 0.0.0.0 --port 8787 > mcp.log 2>&1 &
+    sleep 2
+
+    if pgrep -f "duckduckgo-mcp-server" > /dev/null; then
+        echo "✅ DuckDuckGo MCP Server 已启动 (端口: 8787)"
+    else
+        echo "❌ DuckDuckGo MCP Server 启动失败"
+    fi
 else
-    echo "❌ DuckDuckGo MCP Server 启动失败"
+    echo "ℹ️  HTTP 模式，无需启动 DuckDuckGo MCP Server"
 fi
 
 # 启动 Filesystem MCP Server

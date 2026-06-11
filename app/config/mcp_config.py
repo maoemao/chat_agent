@@ -15,6 +15,7 @@ class MCPServer(BaseModel):
     args: List[str] = []
     env: Dict[str, str] = {}
     process: Optional[Any] = None
+    mode: str = "http"
 
 class MCPConfig(BaseModel):
     servers: List[MCPServer] = []
@@ -30,6 +31,7 @@ class MCPConfig(BaseModel):
                 command=server_config.get('command'),
                 args=server_config.get('args', []),
                 env=server_config.get('env', {}),
+                mode=server_config.get('mode', 'http'),
                 tools=[]
             )
             servers.append(server)
