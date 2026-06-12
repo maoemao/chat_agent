@@ -77,6 +77,20 @@ chmod +x stop_all.sh
 
 ---
 
+## 📖 功能文档
+
+每个功能都有详细的实现说明文档：
+
+| 文档 | 说明 |
+|------|------|
+| [telegram.md](docs/telegram.md) | Telegram 通讯机制详解 |
+| [rag.md](docs/rag.md) | RAG 文档问答实现原理 |
+| [code.md](docs/code.md) | 代码修改助手工作流程 |
+| [git.md](docs/git.md) | Git 操作服务实现 |
+| [mcp.md](docs/mcp.md) | MCP 功能调用机制 |
+
+---
+
 ## 📤 GitHub 代码推送
 
 ### 配置 GitHub Token
